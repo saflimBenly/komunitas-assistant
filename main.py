@@ -44,7 +44,7 @@ async def chat(request: Request):
             headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
         )
         events = events_resp.json()
-        event_list = "\n".join([f"{i+1}. {e['nama']} — {e.get('tanggal', 'TBA')} | {e.get('lokasi', 'TBA')}" for i, e in enumerate(events)]) or "Belum ada event"
+        event_list = "\n\n".join([f"{i+1}. {e['nama']} — {e.get('tanggal', 'TBA')} | {e.get('lokasi', 'TBA')}" for i, e in enumerate(events)]) or "Belum ada event"
     
     async with httpx.AsyncClient() as client:
         ai_resp = await client.post(
