@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Komunitas Assistant</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; height: 100vh; display: flex; flex-direction: column; }
+        
+        .header { background: #1a1a2e; color: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+        .header h1 { font-size: 18px; font-weight: 600; }
+        .header .status { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; }
+        
+        .chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        
+        .message { max-width: 80%; padding: 12px 16px; border-radius: 16px; line-height: 1.5; font-size: 14px; }
+        .message.bot { background: white; align-self: flex-start; border-bottom-left-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .message.user { background: #1a1a2e; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        
+        .typing { display: flex; gap: 4px; padding: 12px 16px; }
+        .typing span { width: 8px; height: 8px; background: #ccc; border-radius: 50%; animation: bounce 1.4s infinite; }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-8px); } }
+        
+        .input-container { padding: 16px 20px; background: white; border-top: 1px solid #eee; display: flex; gap: 12px; }
+        .input-container input { flex: 1; padding: 12px 16px; border: 1px solid #ddd; border-radius: 24px; font-size: 14px; outline: none; }
+        .input-container input:focus { border-color: #1a1a2e; }
+        .input-container button { padding: 12px 24px; background: #1a1a2e; color: white; border: none; border-radius: 24px; cursor: pointer; font-size: 14px; }
+        .input-container button:hover { background: #2d2d4a; }
+        
+        .suggestions { display: flex; gap: 8px; padding: 0 20px 12px; flex-wrap: wrap; }
+        .suggestion { padding: 8px 14px; background: white; border: 1px solid #ddd; border-radius: 16px; font-size: 12px; cursor: pointer; }
+        .suggestion:hover { background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="status"></div>
+        <h1>Komunitas Assistant</h1>
+    </div>
+    
+    <div class="chat-container" id="chat">
+        <div class="message bot">Selamat datang! Saya asisten komunitas Anda. Ada yang bisa saya bantu?</div>
+    </div>
+    
+    <div class="suggestions">
+        <div class="suggestion" onclick="sendSuggestion('Daftar event')">Daftar event</div>
+        <div class="suggestion" onclick="sendSuggestion('Lihat jadwal event')">Lihat jadwal event</div>
+        <div class="suggestion" onclick="sendSuggestion('Cek status pendaftaran')">Cek status pendaftaran</div>
+    </div>
+    
+    <div class="input-container">
+        <input type="text" id="input" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter')sendMessage()">
+        <button onclick="sendMessage()">Kirim</button>
+    </div>
+
+    <script>
+        const chat = document.getElementById('chat');
+        const input = document.getElementById('input');
+        
+        function addMessage(text, isUser = false) {
+            const div = document.createElement('div');
+            div.className = `message ${isUser ? 'user' : 'bot'}`;
+            div.textContent = text;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+        
+        function showTyping() {
+            const div = document.createElement('div');
+            div.className = 'message bot';
+            div.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+            div.id = 'typing';
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+        
+        function hideTyping() {
+            const t = document.getElementById('typing');
+            if (t) t.remove();
+        }
+        
+        function sendSuggestion(text) {
+            input.value = text;
+            sendMessage();
+        }
+        
+        async function sendMessage() {
+            const text = input.value.trim();
+            if (!text) return;
+            
+            addMessage(text, true);
+            input.value = '';
+            showTyping();
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: text})
+                });
+                const data = await response.json();
+                hideTyping();
+                addMessage(data.reply || 'Maaf, saya tidak bisa merespons saat ini.');
+            } catch (err) {
+                hideTyping();
+                addMessage('Maaf, terjadi kesalahan. Silakan coba lagi.');
+            }
+        }
+    </script>
+</body>
+</html>
