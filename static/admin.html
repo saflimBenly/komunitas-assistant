@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Komunitas</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; min-height: 100vh; }
+        .header { background: #1a1a2e; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 20px; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .stat-card h3 { font-size: 28px; color: #1a1a2e; }
+        .stat-card p { color: #888; font-size: 14px; margin-top: 4px; }
+        .section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .section h2 { font-size: 16px; margin-bottom: 16px; color: #1a1a2e; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; color: #555; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .btn { padding: 10px 20px; background: #1a1a2e; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn:hover { background: #2d2d4a; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; font-weight: 600; color: #555; }
+        .login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .login-box { background: white; padding: 32px; border-radius: 12px; width: 320px; }
+        .login-box h2 { margin-bottom: 16px; text-align: center; }
+        .login-box input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 12px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <h2>Admin Login</h2>
+            <input type="password" id="password" placeholder="Password admin" onkeypress="if(event.key==='Enter')login()">
+            <button class="btn" style="width:100%" onclick="login()">Login</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>Admin Dashboard</h1>
+        <button class="btn" onclick="logout()">Logout</button>
+    </div>
+    
+    <div class="container">
+        <div class="stats" id="stats">
+            <div class="stat-card"><h3 id="totalAnggota">-</h3><p>Total Anggota</p></div>
+            <div class="stat-card"><h3 id="totalDaftar">-</h3><p>Total Pendaftaran</p></div>
+        </div>
+
+        <div class="section">
+            <h2>Tambah Event Baru</h2>
+            <div class="form-group"><label>Nama Event</label><input type="text" id="eventNama"></div>
+            <div class="form-group"><label>Deskripsi</label><textarea id="eventDeskripsi" rows="2"></textarea></div>
+            <div class="form-group"><label>Tanggal</label><input type="datetime-local" id="eventTanggal"></div>
+            <div class="form-group"><label>Lokasi</label><input type="text" id="eventLokasi"></div>
+            <div class="form-group"><label>Kuota</label><input type="number" id="eventKuota" value="50"></div>
+            <button class="btn" onclick="addEvent()">Tambah Event</button>
+        </div>
+
+        <div class="section">
+            <h2>Daftar Pendaftar</h2>
+            <table>
+                <thead><tr><th>Nama</th><th>Email</th><th>Event</th><th>Tanggal</th></tr></thead>
+                <tbody id="pendaftarList"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let token = null;
+        
+        async function login() {
+            const password = document.getElementById('password').value;
+            const res = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({password})
+            });
+            if (res.ok) {
+                const data = await res.json();
+                token = data.token;
+                document.getElementById('loginOverlay').classList.add('hidden');
+                loadStats();
+                loadPendaftar();
+            } else {
+                alert('Password salah');
+            }
+        }
+        
+        function logout() {
+            token = null;
+            document.getElementById('loginOverlay').classList.remove('hidden');
+        }
+        
+        async function loadStats() {
+            const res = await fetch('/api/admin/stats');
+            const data = await res.json();
+            document.getElementById('totalAnggota').textContent = data.total_anggota;
+            document.getElementById('totalDaftar').textContent = data.total_pendaftaran;
+        }
+        
+        async function loadPendaftar() {
+            const res = await fetch('/api/admin/pendaftar');
+            const data = await res.json();
+            const tbody = document.getElementById('pendaftarList');
+            tbody.innerHTML = data.map(d => `
+                <tr>
+                    <td>${d.anggota?.nama || '-'}</td>
+                    <td>${d.anggota?.email || '-'}</td>
+                    <td>${d.event?.nama || '-'}</td>
+                    <td>${new Date(d.created_at).toLocaleDateString('id-ID')}</td>
+                </tr>
+            `).join('');
+        }
+        
+        async function addEvent() {
+            const body = {
+                nama: document.getElementById('eventNama').value,
+                deskripsi: document.getElementById('eventDeskripsi').value,
+                tanggal: document.getElementById('eventTanggal').value,
+                lokasi: document.getElementById('eventLokasi').value,
+                kuota: parseInt(document.getElementById('eventKuota').value)
+            };
+            
+            if (!body.nama) { alert('Nama event wajib'); return; }
+            
+            const res = await fetch('/api/admin/event', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            });
+            
+            if (res.ok) {
+                alert('Event berhasil ditambah!');
+                document.getElementById('eventNama').value = '';
+                document.getElementById('eventDeskripsi').value = '';
+                loadStats();
+            }
+        }
+    </script>
+</body>
+</html>

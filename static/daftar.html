@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Event - Komunitas</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; min-height: 100vh; }
+        .header { background: #1a1a2e; color: white; padding: 20px; text-align: center; }
+        .header h1 { font-size: 24px; margin-bottom: 8px; }
+        .header p { opacity: 0.8; font-size: 14px; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .event-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .event-card h3 { font-size: 18px; margin-bottom: 8px; color: #1a1a2e; }
+        .event-card p { color: #666; font-size: 14px; margin-bottom: 4px; }
+        .event-card .meta { display: flex; gap: 16px; margin: 12px 0; font-size: 13px; color: #888; }
+        .btn { display: block; width: 100%; padding: 12px; background: #1a1a2e; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 12px; }
+        .btn:hover { background: #2d2d4a; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: #333; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus { border-color: #1a1a2e; outline: none; }
+        .success-msg { background: #d4edda; color: #155724; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
+        .empty { text-align: center; padding: 40px; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Daftar Event Komunitas</h1>
+        <p>Pilih event dan daftar sekarang</p>
+    </div>
+    
+    <div class="container" id="events">
+        <div class="empty">Memuat event...</div>
+    </div>
+
+    <script>
+        async function loadEvents() {
+            const res = await fetch('/api/events');
+            const events = await res.json();
+            const container = document.getElementById('events');
+            
+            if (!events.length) {
+                container.innerHTML = '<div class="empty">Belum ada event tersedia</div>';
+                return;
+            }
+            
+            container.innerHTML = events.map(e => `
+                <div class="event-card">
+                    <h3>${e.nama}</h3>
+                    <p>${e.deskripsi || ''}</p>
+                    <div class="meta">
+                        <span>📅 ${e.tanggal ? new Date(e.tanggal).toLocaleDateString('id-ID') : 'TBA'}</span>
+                        <span>📍 ${e.lokasi || 'TBA'}</span>
+                    </div>
+                    <button class="btn" onclick="showForm('${e.id}', '${e.nama}')">Daftar Sekarang</button>
+                </div>
+            `).join('');
+        }
+        
+        function showForm(eventId, eventName) {
+            document.getElementById('events').innerHTML = `
+                <div class="event-card">
+                    <h3>Daftar: ${eventName}</h3>
+                    <div class="form-group">
+                        <label>Nama Lengkap</label>
+                        <input type="text" id="nama" placeholder="Masukkan nama">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="email" placeholder="email@contoh.com">
+                    </div>
+                    <div class="form-group">
+                        <label>No. WhatsApp</label>
+                        <input type="tel" id="no_telepon" placeholder="628xxx">
+                    </div>
+                    <button class="btn" onclick="submitDaftar('${eventId}')">Kirim Pendaftaran</button>
+                </div>
+            `;
+        }
+        
+        async function submitDaftar(eventId) {
+            const nama = document.getElementById('nama').value;
+            const email = document.getElementById('email').value;
+            const no_telepon = document.getElementById('no_telepon').value;
+            
+            if (!nama || !email) {
+                alert('Nama dan email wajib diisi');
+                return;
+            }
+            
+            const res = await fetch('/api/daftar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({nama, email, no_telepon, event_id: eventId})
+            });
+            
+            const data = await res.json();
+            
+            if (res.ok) {
+                document.getElementById('events').innerHTML = `
+                    <div class="success-msg">${data.message}</div>
+                    <button class="btn" onclick="loadEvents()">Kembali ke Daftar Event</button>
+                `;
+            } else {
+                alert(data.detail || 'Gagal mendaftar');
+            }
+        }
+        
+        loadEvents();
+    </script>
+</body>
+</html>
