@@ -44,7 +44,7 @@ async def chat(request: Request):
             headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
         )
         events = events_resp.json()
-        event_list = "\n".join([f"📌 {e['nama']}\n   {e.get('tanggal', 'TBA')} | {e.get('lokasi', 'TBA')}" for e in events]) or "Belum ada event"
+        event_list = "\n".join([f"{i+1}. {e['nama']} — {e.get('tanggal', 'TBA')} | {e.get('lokasi', 'TBA')}" for i, e in enumerate(events)]) or "Belum ada event"
     
     async with httpx.AsyncClient() as client:
         ai_resp = await client.post(
@@ -60,7 +60,7 @@ async def chat(request: Request):
                 "messages": [
                     {
                         "role": "system",
-                        "content": f"Asisten komunitas ramah. Bahasa Indonesia.\n\nData event tersedia:\n{event_list}\n\nAturan format:\n- Jika menampilkan daftar event, gunakan format singkat per baris:\n  📌 Nama Event\n     Tanggal | Lokasi\n- Jangan tampilkan JSON mentah atau format teknis.\n- Jika user mau daftar, minta nama & email.\n- Jika user tanya jadwal, tampilkan format rapi seperti di atas."
+                        "content": f"Asisten komunitas ramah. Bahasa Indonesia.\n\nData event tersedia:\n{event_list}\n\nAturan:\n- Tampilkan daftar event dengan nomor urut (1, 2, 3...)\n- Format per event: Nomor. Nama Event — Tanggal | Lokasi\n- Jika user membalas dengan ANGKA (misal: 1 atau 2), artinya dia ingin mendaftar event tersebut.\n- Saat user pilih event, balas dengan: 'Baik, kamu memilih [Nama Event]. Silakan kirim nama lengkap dan email untuk pendaftaran.'\n- Setelah user kirim nama & email, panggil API POST /api/daftar dengan event_id yang dipilih.\n- Jangan tampilkan JSON mentah atau format teknis.\n- Selalu akhiri dengan pertanyaan untuk melanjutkan percakapan."
                     },
                     {"role": "user", "content": message}
                 ],
