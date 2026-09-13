@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import httpx
 import os
+import json
+import subprocess
 
 app = FastAPI()
 
@@ -120,6 +122,18 @@ async def daftar(request: Request):
             headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": "application/json", "Prefer": "return=representation"},
             json={"anggota_id": anggota_id, "event_id": event_id}
         )
+        
+        # Get event name
+        async with httpx.AsyncClient() as client2:
+            event_name_resp = await client2.get(
+                f"{SUPABASE_URL}/rest/v1/event?id=eq.{event_id}&select=nama",
+                headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+            )
+            event_data = event_name_resp.json()
+            event_name = event_data[0]["nama"] if event_data else "Event"
+        
+        # Simpan ke Google Sheets
+        await save_to_sheets(nama, email, no_telepon, event_name)
         
         # Kirim notifikasi WhatsApp
         await send_wa_notification(nama, email, event_id)
@@ -248,5 +262,21 @@ async def update_event(event_id: str, request: Request):
             json=body
         )
     return JSONResponse({"status": "ok"})
+
+SHEET_ID = "1sMm-_U5tpCpTl5Xv1eqBfFYQbM01ATRZn1PopOugoHM"
+
+async def save_to_sheets(nama, email, no_telepon, event_name):
+    """Simpan pendaftaran ke Google Sheets"""
+    try:
+        from datetime import datetime
+        today = datetime.now().strftime("%Y-%m-%d %H:%M")
+        values = json.dumps([[today, nama, email, no_telepon, event_name]])
+        cmd = [
+            "python3", "/root/.hermes/skills/productivity/google-workspace/scripts/google_api.py",
+            "sheets", "append", SHEET_ID, "Pendaftaran!A:E", "--values", values
+        ]
+        subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    except Exception as e:
+        print(f"Sheets error: {e}")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
