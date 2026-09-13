@@ -238,4 +238,15 @@ async def delete_event(event_id: str):
         )
     return JSONResponse({"status": "ok"})
 
+@app.put("/api/admin/event/{event_id}")
+async def update_event(event_id: str, request: Request):
+    body = await request.json()
+    async with httpx.AsyncClient() as client:
+        resp = await client.patch(
+            f"{SUPABASE_URL}/rest/v1/event?id=eq.{event_id}",
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": "application/json", "Prefer": "return=minimal"},
+            json=body
+        )
+    return JSONResponse({"status": "ok"})
+
 app.mount("/static", StaticFiles(directory="static"), name="static")

@@ -23,6 +23,8 @@
         .btn:hover { background: #2d2d4a; }
         .btn-danger { background: #dc3545; }
         .btn-danger:hover { background: #c82333; }
+        .btn-edit { background: #0d6efd; }
+        .btn-edit:hover { background: #0b5ed7; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; font-weight: 600; color: #555; }
@@ -125,7 +127,7 @@
                     <td>${e.lokasi || '-'}</td>
                     <td>${e.kuota || '-'}</td>
                     <td>-</td>
-                    <td><button class="btn btn-danger" onclick="deleteEvent('${e.id}')">Hapus</button></td>
+                    <td><button class="btn btn-edit" onclick="editEvent('${e.id}', '${e.nama}', '${e.deskripsi || ''}', '${e.tanggal || ''}', '${e.lokasi || ''}', ${e.kuota || 0})">✏️</button> <button class="btn btn-danger" onclick="deleteEvent('${e.id}')">🗑️</button></td>
                 </tr>
             `).join('');
         }
@@ -135,6 +137,27 @@
             await fetch('/api/admin/event/' + eventId, { method: 'DELETE' });
             loadStats();
             loadEvents();
+        }
+        
+        function editEvent(id, nama, deskripsi, tanggal, lokasi, kuota) {
+            const newNama = prompt('Nama event:', nama);
+            if (!newNama) return;
+            const newDeskripsi = prompt('Deskripsi:', deskripsi);
+            const newTanggal = prompt('Tanggal (YYYY-MM-DDTHH:MM):', tanggal);
+            const newLokasi = prompt('Lokasi:', lokasi);
+            const newKuota = prompt('Kuota:', kuota);
+            
+            fetch('/api/admin/event/' + id, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    nama: newNama,
+                    deskripsi: newDeskripsi,
+                    tanggal: newTanggal,
+                    lokasi: newLokasi,
+                    kuota: parseInt(newKuota) || 0
+                })
+            }).then(() => { loadStats(); loadEvents(); });
         }
         
         async function loadPendaftar() {
