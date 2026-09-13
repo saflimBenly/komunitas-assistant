@@ -64,6 +64,14 @@
         </div>
 
         <div class="section">
+            <h2>Daftar Event</h2>
+            <table>
+                <thead><tr><th>Nama</th><th>Tanggal</th><th>Lokasi</th><th>Kuota</th><th>Pendaftar</th><th>Aksi</th></tr></thead>
+                <tbody id="eventList"></tbody>
+            </table>
+        </div>
+
+        <div class="section">
             <h2>Daftar Pendaftar</h2>
             <table>
                 <thead><tr><th>Nama</th><th>Email</th><th>Event</th><th>Tanggal</th></tr></thead>
@@ -103,6 +111,30 @@
             const data = await res.json();
             document.getElementById('totalAnggota').textContent = data.total_anggota;
             document.getElementById('totalDaftar').textContent = data.total_pendaftaran;
+            loadEvents();
+        }
+        
+        async function loadEvents() {
+            const res = await fetch('/api/events');
+            const events = await res.json();
+            const tbody = document.getElementById('eventList');
+            tbody.innerHTML = events.map(e => `
+                <tr>
+                    <td>${e.nama}</td>
+                    <td>${e.tanggal ? new Date(e.tanggal).toLocaleDateString('id-ID') : '-'}</td>
+                    <td>${e.lokasi || '-'}</td>
+                    <td>${e.kuota || '-'}</td>
+                    <td>-</td>
+                    <td><button class="btn btn-danger" onclick="deleteEvent('${e.id}')">Hapus</button></td>
+                </tr>
+            `).join('');
+        }
+        
+        async function deleteEvent(eventId) {
+            if (!confirm('Hapus event ini?')) return;
+            await fetch('/api/admin/event/' + eventId, { method: 'DELETE' });
+            loadStats();
+            loadEvents();
         }
         
         async function loadPendaftar() {
