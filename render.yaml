@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: komunitas-assistant
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENROUTER_KEY
+        sync: false
+      - key: SUPABASE_URL
+        value: https://ewccarqqiqfpnlnjuhzb.supabase.co
+      - key: SUPABASE_KEY
+        value: sb_publishable_Vx9ioiVeW9WxvYkzKgCWxA_pmb5arka
