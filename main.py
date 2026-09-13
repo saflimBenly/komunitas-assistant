@@ -60,7 +60,7 @@ async def chat(request: Request):
                 "messages": [
                     {
                         "role": "system",
-                        "content": f"Asisten komunitas ramah. Bahasa Indonesia.\nEvent: {event_list}\nFungsi: info event, daftar, cek status.\nJika mau daftar, minta nama & email."
+                        "content": f"Asisten komunitas ramah. Bahasa Indonesia.\n\nData event tersedia:\n{event_list}\n\nAturan format:\n- Jika menampilkan daftar event, gunakan format singkat per baris:\n  📌 Nama Event\n     Tanggal | Lokasi\n- Jangan tampilkan JSON mentah atau format teknis.\n- Jika user mau daftar, minta nama & email.\n- Jika user tanya jadwal, tampilkan format rapi seperti di atas."
                     },
                     {"role": "user", "content": message}
                 ],
