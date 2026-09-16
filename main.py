@@ -46,7 +46,17 @@ async def chat(request: Request):
             headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
         )
         events = events_resp.json()
-        event_list = "\n\n".join([f"{i+1}. {e['nama']} — {e.get('tanggal', 'TBA')} | {e.get('lokasi', 'TBA')}" for i, e in enumerate(events)]) or "Belum ada event"
+        from datetime import datetime, timedelta
+        def to_wib(tanggal):
+            if not tanggal:
+                return 'TBA'
+            try:
+                dt = datetime.fromisoformat(tanggal.replace('Z', '+00:00'))
+                wib = dt + timedelta(hours=7)
+                return wib.strftime('%d %B %Y, %H.%M WIB')
+            except:
+                return tanggal
+        event_list = "\n".join([f"{i+1}. {e['nama']} — {to_wib(e.get('tanggal'))} | {e.get('lokasi', 'TBA')}" for i, e in enumerate(events)]) or "Belum ada event"
     
     async with httpx.AsyncClient() as client:
         ai_resp = await client.post(

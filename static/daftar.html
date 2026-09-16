@@ -51,7 +51,7 @@
                     <h3>${e.nama}</h3>
                     <p>${e.deskripsi || ''}</p>
                     <div class="meta">
-                        <span>📅 ${e.tanggal ? new Date(e.tanggal).toLocaleDateString('id-ID') : 'TBA'}</span>
+                        <span>📅 ${e.tanggal ? new Date(e.tanggal).toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}) : 'TBA'}</span>
                         <span>📍 ${e.lokasi || 'TBA'}</span>
                     </div>
                     <button class="btn" onclick="showForm('${e.id}', '${e.nama}')">Daftar Sekarang</button>
